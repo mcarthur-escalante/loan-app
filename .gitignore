@@ -1,0 +1,19 @@
+# Libraries
+node_modules/
+
+# Environment variables
+.env
+
+# Compiled code
+dist/
+
+#IDEs
+.idea/
+*iml
+.vscode/
+
+# Password files
+*password*
+
+# Temporary files and directories
+tmp*

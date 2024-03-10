@@ -1,0 +1,20 @@
+services:
+  db:
+    image: postgres:16.2-alpine3.19
+    container_name: loan-db-dev
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=example
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    ports:
+      - 5432:5432
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: ../db_password.txt

@@ -1,0 +1,38 @@
+services:
+  server:
+    build:
+      context: .
+    container_name: loan-api
+    ports:
+      - 3000:3000
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/postgres?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+  db:
+    image: postgres:16.2-alpine3.19
+    container_name: loan-db
+    restart: always
+    user: postgres
+    secrets:
+      - db-password
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=example
+      - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
+    ports:
+      - 5432:5432
+    healthcheck:
+      test: [ "CMD", "pg_isready" ]
+      interval: 1s
+      timeout: 5s
+      retries: 5
+volumes:
+  db-data:
+secrets:
+  db-password:
+    file: db_password.txt

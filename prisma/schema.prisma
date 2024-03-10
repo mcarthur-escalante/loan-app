@@ -1,0 +1,90 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+generator markdown {
+  provider = "node node_modules/prisma-markdown/lib/executable/markdown.js"
+  output   = "../database-schema.md"
+  title    = "Loan Application Processing Service ERD"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id               String            @id @default(nanoid()) @db.Char(21)
+  firstName        String            @map("first_name") @db.VarChar(255)
+  lastName         String            @map("last_name") @db.VarChar(255)
+  email            String            @unique @db.VarChar(255)
+  phoneNumber      String            @map("phone_number") @db.VarChar(20)
+  address          String
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime?         @updatedAt @map("updated_at")
+  loanApplications LoanApplication[]
+
+  @@map("customers")
+}
+
+model LoanApplication {
+  id              String                @id @default(nanoid()) @db.Char(21)
+  customerId      String                @map("customer_id") @db.Char(21)
+  loanTypeId      String                @map("loan_type_id") @db.Char(21)
+  amount          Decimal               @db.Decimal(15, 2)
+  termMonths      Int                   @map("term_months")
+  applicationDate DateTime              @map("application_date") @db.Date
+  createdAt       DateTime              @default(now()) @map("created_at")
+  updatedAt       DateTime?             @updatedAt @map("updated_at")
+  status          LoanApplicationStatus
+  history         ApplicationHistory[]
+  customer        Customer              @relation(fields: [customerId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  loanType        LoanType              @relation(fields: [loanTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  approval        LoanApproval?
+
+  @@map("loan_applications")
+}
+
+model ApplicationHistory {
+  id            String                @id @default(nanoid()) @db.Char(21)
+  applicationId String                @map("application_id") @db.Char(21)
+  createdAt     DateTime              @default(now()) @map("created_at")
+  status        LoanApplicationStatus
+  statusReason  String?               @map("status_reason") @db.Text
+  application   LoanApplication       @relation(fields: [applicationId], references: [id])
+
+  @@map("application_history")
+}
+
+model LoanApproval {
+  id                   String          @id @default(nanoid()) @db.Char(21)
+  applicationId        String          @unique @map("application_id") @db.Char(21)
+  approvalDate         DateTime        @default(now()) @map("approval_date") @db.Date
+  approvedAmount       Decimal         @map("approved_amount") @db.Decimal(15, 2)
+  approvedTermMonths   Int             @map("approved_term_months")
+  approvedInterestRate Decimal         @map("approved_interest_rate") @db.Decimal(5, 2)
+  application          LoanApplication @relation(fields: [applicationId], references: [id])
+
+  @@map("loan_approvals")
+}
+
+model LoanType {
+  id               String            @id @default(nanoid()) @db.Char(21)
+  name             String            @unique @db.VarChar(255)
+  description      String
+  interestRate     Decimal           @map("interest_rate") @db.Decimal(5, 2)
+  maxAmount        Decimal           @map("max_amount") @db.Decimal(15, 2)
+  maxTermMonths    Int               @map("max_term_months")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  updatedAt        DateTime?         @updatedAt @map("updated_at")
+  loanApplications LoanApplication[]
+
+  @@map("loan_types")
+}
+
+enum LoanApplicationStatus {
+  IN_PROGRESS
+  APPROVED
+  REJECTED
+}
